@@ -1,0 +1,3 @@
+confluent-kafka
+cassandra-driver
+pymongo
