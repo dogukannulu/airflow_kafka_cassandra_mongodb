@@ -17,7 +17,7 @@ class MongoDBConnector:
     def close(self):
         self.client.close()
 
-class KafkaConsumerWrapper:
+class KafkaConsumerWrapperMongoDB:
     def __init__(self, kafka_config, topics):
         self.consumer = Consumer(kafka_config)
         self.consumer.subscribe(topics)
@@ -51,22 +51,24 @@ class KafkaConsumerWrapper:
         self.consumer.close()
 
 # MongoDB configuration
-mongodb_connector = MongoDBConnector('mongodb://localhost:27017/', 'email_namespace', 'email_table')
+mongodb_connector = MongoDBConnector('mongodb://root:root@mongo:27017/', 'email_namespace', 'email_table')
 
-# Kafka configuration
-kafka_config = {
-    'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
-    'group.id': 'consumer_group',
-    'auto.offset.reset': 'earliest'
-}
 
-# Kafka topics to subscribe to
-topics = ['email_topic']
+def mongodb_main():
+    # Kafka configuration
+    kafka_config = {
+        'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
+        'group.id': 'consumer_group',
+        'auto.offset.reset': 'earliest'
+    }
 
-# Create a Kafka consumer and consume messages
-kafka_consumer = KafkaConsumerWrapper(kafka_config, topics)
-try:
-    kafka_consumer.consume_messages()
-finally:
-    kafka_consumer.close()
-    mongodb_connector.close()
+    # Kafka topics to subscribe to
+    topics = ['email_topic']
+
+    # Create a Kafka consumer and consume messages
+    kafka_consumer = KafkaConsumerWrapperMongoDB(kafka_config, topics)
+    try:
+        kafka_consumer.consume_messages()
+    finally:
+        kafka_consumer.close()
+        mongodb_connector.close()

@@ -31,7 +31,7 @@ class CassandraConnector:
     def shutdown(self):
         self.cluster.shutdown()
 
-class KafkaConsumerWrapper:
+class KafkaConsumerWrapperCassandra:
     def __init__(self, kafka_config, topics):
         self.consumer = Consumer(kafka_config)
         self.consumer.subscribe(topics)
@@ -64,23 +64,25 @@ class KafkaConsumerWrapper:
     def close(self):
         self.consumer.close()
 
+
 # Cassandra configuration
 cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
 
-# Kafka configuration
-kafka_config = {
-    'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
-    'group.id': 'consumer_group',
-    'auto.offset.reset': 'earliest'
-}
+def cassandra_main():
+    # Kafka configuration
+    kafka_config = {
+        'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
+        'group.id': 'consumer_group',
+        'auto.offset.reset': 'earliest'
+    }
 
-# Kafka topics to subscribe to
-topics = ['email_topic']
+    # Kafka topics to subscribe to
+    topics = ['email_topic']
 
-# Create a Kafka consumer and consume messages
-kafka_consumer = KafkaConsumerWrapper(kafka_config, topics)
-try:
-    kafka_consumer.consume_messages()
-finally:
-    kafka_consumer.close()
-    cassandra_connector.shutdown()
+    # Create a Kafka consumer and consume messages
+    kafka_consumer = KafkaConsumerWrapperCassandra(kafka_config, topics)
+    try:
+        kafka_consumer.consume_messages()
+    finally:
+        kafka_consumer.close()
+        cassandra_connector.shutdown()
