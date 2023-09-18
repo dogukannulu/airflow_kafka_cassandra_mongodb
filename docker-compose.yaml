@@ -30,6 +30,19 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  install-requirements:
+    <<: *airflow-common
+    container_name: install-requirements
+    build:
+      context: .
+    volumes:
+      - ./requirements.txt:/requirements.txt
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - cassandra-kafka
+
   postgres:
     image: postgres:13
     container_name: postgres
@@ -80,9 +93,6 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    volumes:
-      - ./requirements.txt:/app/requirements.txt
-    command: ["pip", "install", "-r", "/app/requirements.txt"]
     networks:
       - cassandra-kafka
 
@@ -409,6 +419,7 @@ services:
   
   mongo:
     image: mongo
+    container_name: mongo
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
@@ -418,29 +429,14 @@ services:
 
   mongo-express:
     image: mongo-express
+    container_name: mongo-express
     restart: always
     ports:
-      - 8081:8081
+      - 8082:8081
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: root
       ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
-    networks:
-      - cassandra-kafka
-
-  kafka-producer:
-    container_name: kafka_producer
-    build:
-      context: .
-      dockerfile: Dockerfile-producer
-    networks:
-      - cassandra-kafka
-
-  kafka-consumer:
-    container_name: kafka_consumer
-    build:
-      context: .
-      dockerfile: Dockerfile-consumer-cassandra
     networks:
       - cassandra-kafka
 
