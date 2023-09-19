@@ -7,6 +7,12 @@ class MongoDBConnector:
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
 
+    def create_database(self, database_name):
+        self.client[database_name]
+
+    def create_collection(self, collection_name):
+        self.db.create_collection(collection_name)
+
     def insert_data(self, email, otp):
         document = {
             "email": email,
