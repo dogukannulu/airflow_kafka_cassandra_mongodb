@@ -1,6 +1,7 @@
 from confluent_kafka import Consumer, KafkaError
 from cassandra.cluster import Cluster
 
+
 class CassandraConnector:
     def __init__(self, contact_points, keyspace):
         self.cluster = Cluster(contact_points)
@@ -35,47 +36,59 @@ class CassandraConnector:
         consumer = Consumer(kafka_config)
         consumer.subscribe(topics)
 
-        try:
-            while True:
-                msg = consumer.poll(1.0)
+        while True:
+            msg = consumer.poll(1.0)
 
-                if msg is None:
-                    continue
-                if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
-                        print('Reached end of partition')
-                    else:
-                        print('Error: {}'.format(msg.error()))
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    print('Reached end of partition')
                 else:
-                    email = msg.key().decode('utf-8')
-                    otp = msg.value().decode('utf-8')
+                    print('Error: {}'.format(msg.error()))
+                consumer.close()
+            else:
+                email = msg.key().decode('utf-8')
+                otp = msg.value().decode('utf-8')
 
-                    # Insert data into Cassandra table
-                    self.insert_data(email, otp)
-                    print(f'Received and inserted: Email={email}, OTP={otp}')
-        finally:
-            consumer.close()
-            self.shutdown()
+                # Create a dict
+                data = {'email': email, 'otp': otp}
 
+                # Insert data into Cassandra table
+                self.insert_data(email, otp)
+                print(f'Received and inserted: Email={email}, OTP={otp}')
 
-# Cassandra configuration
-cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
+                consumer.close()
+
+                return data
+
 
 def cassandra_main():
+    # Cassandra configuration
+    cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
+
+    # Create Cassandra keyspace and table
+    cassandra_connector.create_keyspace()
+    cassandra_connector.create_table()
+
     # Kafka configuration
     kafka_config = {
-        'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
-        'group.id': 'consumer_group',
+        'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094',
+        'group.id': 'cassandra_consumer_group',
         'auto.offset.reset': 'earliest'
     }
 
     # Kafka topics to subscribe to
     topics = ['email_topic']
 
-    # Create a Kafka consumer and consume messages
-    kafka_consumer = KafkaConsumerWrapperCassandra(kafka_config, topics)
-    try:
-        kafka_consumer.consume_messages()
-    finally:
-        kafka_consumer.close()
-        cassandra_connector.shutdown()
+    cassandra_connector.execute_cassandra_kafka_integration(kafka_config, topics)
+
+    data = cassandra_connector.execute_cassandra_kafka_integration(kafka_config, topics)
+    
+    cassandra_connector.shutdown()
+
+    return data
+
+
+if __name__ == '__main__':
+    cassandra_main()
