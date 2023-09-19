@@ -27,11 +27,29 @@ with DAG('airflow_kafka_nosql', default_args=default_args, schedule_interval='@d
                              retries=2, retry_delay=timedelta(seconds=10),
                              execution_timeout=timedelta(seconds=10))
     
-    kafka_consumer_cassandra = Python
+    kafka_consumer_cassandra = PythonOperator(task_id='kafka_consumer_cassandra', python_callable=kafka_consumer_cassandra_main,
+                             retries=2, retry_delay=timedelta(seconds=10),
+                             execution_timeout=timedelta(seconds=45))
+    
+    kafka_consumer_mongodb = PythonOperator(task_id='kafka_consumer_mongodb', python_callable=kafka_consumer_mongodb_main,
+                             retries=2, retry_delay=timedelta(seconds=10),
+                             execution_timeout=timedelta(seconds=45))
+    
+    kafka_producer = PythonOperator(task_id='kafka_producer', python_callable=kafka_producer_main,
+                             retries=2, retry_delay=timedelta(seconds=10),
+                             execution_timeout=timedelta(seconds=45))
+    
+    check_cassandra = PythonOperator(task_id='check_cassandra', python_callable=check_cassandra_main,
+                             retries=2, retry_delay=timedelta(seconds=10),
+                             execution_timeout=timedelta(seconds=45))
+    
+    check_mongodb = PythonOperator(task_id='check_mongodb', python_callable=check_mongodb_main,
+                             retries=2, retry_delay=timedelta(seconds=10),
+                             execution_timeout=timedelta(seconds=45))
 
     topic_created = DummyOperator(task_id="topic_created")
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    create_new_topic >> [topic_created, topic_already_exists]
-    [topic_created, topic_already_exists] >>
+    create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer >> [kafka_consumer_cassandra >> check_cassandra, kafka_consumer_mongodb >> check_mongodb]
+    
