@@ -70,10 +70,13 @@ def mongodb_main():
     # Kafka topics to subscribe to
     topics = ['email_topic']
 
-    # Create a Kafka consumer and consume messages
+    # Create a Kafka consumer and consume/insert messages
     kafka_consumer = KafkaConsumerWrapperMongoDB(kafka_config, topics)
     try:
-        kafka_consumer.consume_messages()
+        kafka_consumer.consume_and_insert_messages()
     finally:
         kafka_consumer.close()
         mongodb_connector.close()
+
+if __name__ == '__main__':
+    mongodb_main()
