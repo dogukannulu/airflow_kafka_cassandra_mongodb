@@ -12,7 +12,7 @@ admin_config = {
 
 admin_client = AdminClient(admin_config)
 
-def create_new_topic():
+def kafka_create_topic_main():
     """Checks if the topic email_topic exists or not. If not, creates the topic."""
     topic_name = 'email_topic'
 
@@ -29,5 +29,5 @@ def create_new_topic():
 
 
 if __name__ == "__main__":
-    result = create_new_topic()
+    result = kafka_create_topic_main()
     print(result)
