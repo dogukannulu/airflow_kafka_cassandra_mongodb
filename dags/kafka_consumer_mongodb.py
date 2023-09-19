@@ -28,8 +28,7 @@ class KafkaConsumerWrapperMongoDB:
         self.consumer = Consumer(kafka_config)
         self.consumer.subscribe(topics)
 
-    @classmethod
-    def consume_messages(self):
+    def consume_and_insert_messages(self):
         while True:
             msg = self.consumer.poll(1.0)
 
