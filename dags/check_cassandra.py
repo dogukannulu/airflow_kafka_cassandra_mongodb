@@ -26,25 +26,28 @@ class CassandraConnector:
     def close(self):
         self.cluster.shutdown()
 
-# Cassandra configuration
-contact_points = ['cassandra']  # Replace with your Cassandra node(s)
-keyspace = 'email_namespace'
 
-# Create a CassandraConnector instance
-cassandra_connector = CassandraConnector(contact_points, keyspace)
+def check_cassandra_main():
 
-# Define a sample email to search for
-sample_email = 'sample_email@my_email.com'
+    # Cassandra configuration
+    contact_points = ['cassandra']  # Replace with your Cassandra node(s)
+    keyspace = 'email_namespace'
 
-# Query the Cassandra table for the sample email
-cassandra_connector.select_data(sample_email)
+    # Create a CassandraConnector instance
+    cassandra_connector = CassandraConnector(contact_points, keyspace)
 
-query_length = cassandra_connector.select_data(sample_email)
+    # Define a sample email to search for
+    sample_email = 'sample_email@my_email.com'
 
-if query_length > 0:
-    logger.info("Record successfully inserted into the table")
-else:
-    logger.error("No records found")
+    # Query the Cassandra table for the sample email
+    cassandra_connector.select_data(sample_email)
 
-# Close the Cassandra connection
-cassandra_connector.close()
+    query_length = cassandra_connector.select_data(sample_email)
+
+    if query_length > 0:
+        logger.info("Record successfully inserted into the table")
+    else:
+        logger.error("No records found")
+
+    # Close the Cassandra connection
+    cassandra_connector.close()
