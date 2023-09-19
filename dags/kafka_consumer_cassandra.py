@@ -67,7 +67,7 @@ class CassandraConnector:
 
 
 
-def cassandra_main():
+def kafka_consumer_cassandra_main():
     # Cassandra configuration
     cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
 
@@ -95,4 +95,4 @@ def cassandra_main():
 
 
 if __name__ == '__main__':
-    cassandra_main()
+    kafka_consumer_cassandra_main()
