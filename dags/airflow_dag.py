@@ -23,6 +23,6 @@ with DAG('airflow_kafka_nosql', default_args=default_args, schedule_interval='@d
 
     topic_created = DummyOperator(task_id="topic_created")
 
-    topic_exists = DummyOperator(task_id="topic_already_exists")
+    topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    create_new_topic >> [topic_created, topic_exists]
+    create_new_topic >> [topic_created, topic_already_exists]
