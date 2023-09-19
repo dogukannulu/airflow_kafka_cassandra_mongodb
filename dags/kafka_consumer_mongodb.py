@@ -59,7 +59,7 @@ class KafkaConsumerWrapperMongoDB:
 mongodb_connector = MongoDBConnector('mongodb://root:root@mongo:27017/', 'email_database', 'email_collection')
 
 
-def mongodb_main():
+def kafka_consumer_mongodb_main():
     mongodb_connector.create_database('email_database')
     mongodb_connector.create_collection('email_collection')
 
@@ -84,4 +84,4 @@ def mongodb_main():
         mongodb_connector.close()
 
 if __name__ == '__main__':
-    mongodb_main()
+    kafka_consumer_mongodb_main()
