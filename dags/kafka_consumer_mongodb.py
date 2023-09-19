@@ -56,10 +56,13 @@ class KafkaConsumerWrapperMongoDB:
         self.consumer.close()
 
 # MongoDB configuration
-mongodb_connector = MongoDBConnector('mongodb://root:root@mongo:27017/', 'email_namespace', 'email_table')
+mongodb_connector = MongoDBConnector('mongodb://root:root@mongo:27017/', 'email_database', 'email_collection')
 
 
 def mongodb_main():
+    mongodb_connector.create_database('email_database')
+    mongodb_connector.create_collection('email_collection')
+
     # Kafka configuration
     kafka_config = {
         'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
