@@ -56,40 +56,6 @@ class CassandraConnector:
         finally:
             consumer.close()
             self.shutdown()
-            
-
-class KafkaConsumerWrapperCassandra:
-    def __init__(self, kafka_config, topics):
-        self.consumer = Consumer(kafka_config)
-        self.consumer.subscribe(topics)
-
-    @classmethod
-    def consume_messages(self):
-        while True:
-            msg = self.consumer.poll(1.0)
-
-            if msg is None:
-                continue
-            if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF:
-                    print('Reached end of partition')
-                else:
-                    print('Error: {}'.format(msg.error()))
-            else:
-                email = msg.key().decode('utf-8')
-                otp = msg.value().decode('utf-8')
-
-                # Create a dict
-                data = {'email': email, 'otp': otp}
-
-                # Insert data into Cassandra table
-                cassandra_connector.insert_data(email, otp)
-                print(f'Received and inserted: Email={email}, OTP={otp}')
-
-                return data
-
-    def close(self):
-        self.consumer.close()
 
 
 # Cassandra configuration
