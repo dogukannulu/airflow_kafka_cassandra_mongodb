@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 # MongoDB configuration
 mongodb_uri = 'mongodb://root:root@mongo:27017/'
-database_name = 'email_namespace'
-collection_name = 'email_table'
+database_name = 'email_database'
+collection_name = 'email_collection'
 
 # Connect to MongoDB and the specified collection
 client = MongoClient(mongodb_uri)
@@ -16,7 +16,7 @@ db = client[database_name]
 collection = db[collection_name]
 
 # Define a sample email to search for
-sample_email = 'dogu@example.com'
+sample_email = 'sample_email@my_email.com'
 
 # Query the collection for the sample email
 result = collection.find_one({'email': sample_email})
