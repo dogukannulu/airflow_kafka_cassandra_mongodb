@@ -34,7 +34,7 @@ keyspace = 'email_namespace'
 cassandra_connector = CassandraConnector(contact_points, keyspace)
 
 # Define a sample email to search for
-sample_email = 'dogu@example.com'
+sample_email = 'sample_email@my_email.com'
 
 # Query the Cassandra table for the sample email
 cassandra_connector.select_data(sample_email)
