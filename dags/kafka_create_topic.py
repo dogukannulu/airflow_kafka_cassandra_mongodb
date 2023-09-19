@@ -16,21 +16,17 @@ def create_new_topic():
     """Checks if the topic email_topic exists or not. If not, creates the topic."""
     topic_name = 'email_topic'
 
-    try:
-        # Check if the topic already exists
-        topic_exists = topic_name in admin_client.list_topics().topics
+    # Check if the topic already exists
+    topic_exists = topic_name in admin_client.list_topics().topics
 
-        if topic_exists:
-            return "topic_already_exists"
-        
-        # Create the new topic
-        new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=3)
-        admin_client.create_topics([new_topic])
-        return "topic_created"
-    except Exception as e:
-        # Print the exception message for debugging purposes
-        logger.error(f"Error creating topic: {str(e)}")
-        return "topic_creation_failed"
+    if topic_exists:
+        return "topic_already_exists"
+    
+    # Create the new topic
+    new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=3)
+    admin_client.create_topics([new_topic])
+    return "topic_created"
+
 
 if __name__ == "__main__":
     result = create_new_topic()
