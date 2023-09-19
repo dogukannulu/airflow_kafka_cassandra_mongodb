@@ -17,7 +17,7 @@ class KafkaProducerWrapper:
         self.producer.produce(topic, key=key, value=value)
         self.producer.flush()
 
-def main():
+def kafka_producer_main():
     bootstrap_servers = 'kafka1:19092,kafka2:19093,kafka3:19094'
     kafka_producer = KafkaProducerWrapper(bootstrap_servers)
     
@@ -28,4 +28,4 @@ def main():
     kafka_producer.produce_message(topic, key, value)
 
 if __name__ == "__main__":
-    main()
+    kafka_producer_main()
