@@ -77,6 +77,8 @@ def mongodb_main():
     kafka_consumer = KafkaConsumerWrapperMongoDB(kafka_config, topics)
     try:
         kafka_consumer.consume_and_insert_messages()
+        data = kafka_consumer.consume_and_insert_messages()
+        return data
     finally:
         kafka_consumer.close()
         mongodb_connector.close()
