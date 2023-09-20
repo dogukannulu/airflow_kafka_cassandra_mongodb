@@ -7,6 +7,12 @@ class MongoDBConnector:
         self.db = self.client[database_name]
         self.collection = self.db[collection_name]
 
+    def create_database(self, database_name):
+        self.client[database_name]
+
+    def create_collection(self, collection_name):
+        self.db.create_collection(collection_name)
+
     def insert_data(self, email, otp):
         document = {
             "email": email,
@@ -17,13 +23,12 @@ class MongoDBConnector:
     def close(self):
         self.client.close()
 
-class KafkaConsumerWrapper:
+class KafkaConsumerWrapperMongoDB:
     def __init__(self, kafka_config, topics):
         self.consumer = Consumer(kafka_config)
         self.consumer.subscribe(topics)
 
-    @classmethod
-    def consume_messages(self):
+    def consume_and_insert_messages(self):
         while True:
             msg = self.consumer.poll(1.0)
 
@@ -51,22 +56,32 @@ class KafkaConsumerWrapper:
         self.consumer.close()
 
 # MongoDB configuration
-mongodb_connector = MongoDBConnector('mongodb://localhost:27017/', 'email_namespace', 'email_table')
+mongodb_connector = MongoDBConnector('mongodb://root:root@mongo:27017/', 'email_database', 'email_collection')
 
-# Kafka configuration
-kafka_config = {
-    'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
-    'group.id': 'consumer_group',
-    'auto.offset.reset': 'earliest'
-}
 
-# Kafka topics to subscribe to
-topics = ['email_topic']
+def kafka_consumer_mongodb_main():
+    mongodb_connector.create_database('email_database')
+    mongodb_connector.create_collection('email_collection')
 
-# Create a Kafka consumer and consume messages
-kafka_consumer = KafkaConsumerWrapper(kafka_config, topics)
-try:
-    kafka_consumer.consume_messages()
-finally:
-    kafka_consumer.close()
-    mongodb_connector.close()
+    # Kafka configuration
+    kafka_config = {
+        'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094', 
+        'group.id': 'consumer_group',
+        'auto.offset.reset': 'earliest'
+    }
+
+    # Kafka topics to subscribe to
+    topics = ['email_topic']
+
+    # Create a Kafka consumer and consume/insert messages
+    kafka_consumer = KafkaConsumerWrapperMongoDB(kafka_config, topics)
+    try:
+        kafka_consumer.consume_and_insert_messages()
+        data = kafka_consumer.consume_and_insert_messages()
+        return data
+    finally:
+        kafka_consumer.close()
+        mongodb_connector.close()
+
+if __name__ == '__main__':
+    kafka_consumer_mongodb_main()
