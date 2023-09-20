@@ -11,13 +11,13 @@ class CassandraConnector:
         self.create_table()
 
     def create_keyspace(self):
-        self.session.execute(f"""
-            CREATE KEYSPACE IF NOT EXISTS {self.keyspace}
-            WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1}
-        """)
+        self.session.execute(
+            f"CREATE KEYSPACE IF NOT EXISTS {self.keyspace} "
+            "WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1}"
+        )
 
     def create_table(self):
-        self.session.execute(f"""
+            self.session.execute(f"""
             CREATE TABLE IF NOT EXISTS {self.keyspace}.email_table (
                 email text PRIMARY KEY,
                 otp text
