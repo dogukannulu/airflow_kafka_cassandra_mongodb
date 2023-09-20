@@ -5,27 +5,28 @@ from cassandra.cluster import Cluster
 class CassandraConnector:
     def __init__(self, contact_points, keyspace):
         self.cluster = Cluster(contact_points)
-        self.session = self.cluster.connect(keyspace)
+        self.session = self.cluster.connect()
+        self.keyspace = keyspace
         self.create_keyspace()
         self.create_table()
 
     def create_keyspace(self):
-        self.session.execute("""
-            CREATE KEYSPACE IF NOT EXISTS email_namespace
+        self.session.execute(f"""
+            CREATE KEYSPACE IF NOT EXISTS {self.keyspace}
             WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1}
         """)
 
     def create_table(self):
-        self.session.execute("""
-            CREATE TABLE IF NOT EXISTS email_namespace.email_table (
+        self.session.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.keyspace}.email_table (
                 email text PRIMARY KEY,
                 otp text
             )
         """)
 
     def insert_data(self, email, otp):
-        self.session.execute("""
-            INSERT INTO email_table (email, otp)
+        self.session.execute(f"""
+            INSERT INTO {self.keyspace} (email, otp)
             VALUES (%s, %s)
         """, (email, otp))
 
@@ -69,7 +70,8 @@ class CassandraConnector:
 
 def kafka_consumer_cassandra_main():
     # Cassandra configuration
-    cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
+    keyspace = 'email_namespace'
+    cassandra_connector = CassandraConnector(['cassandra'], keyspace)
 
     # Create Cassandra keyspace and table
     cassandra_connector.create_keyspace()
