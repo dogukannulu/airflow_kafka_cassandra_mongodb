@@ -51,5 +51,5 @@ with DAG('airflow_kafka_nosql', default_args=default_args, schedule_interval='@d
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer >> [kafka_consumer_cassandra >> check_cassandra, kafka_consumer_mongodb >> check_mongodb]
-    
+    create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer >> kafka_consumer_cassandra >> check_cassandra
+    create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer >> kafka_consumer_mongodb >> check_mongodb
