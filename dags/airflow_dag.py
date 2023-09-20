@@ -21,7 +21,7 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-with DAG('airflow_kafka_nosql', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
+with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
     create_new_topic = BranchPythonOperator(task_id='create_new_topic', python_callable=kafka_create_topic_main,
                              retries=2, retry_delay=timedelta(seconds=10),
