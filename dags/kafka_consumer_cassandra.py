@@ -1,11 +1,16 @@
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, KafkaException, TopicPartition
 from cassandra.cluster import Cluster
+import time
+import logging
 
+# Configure the logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 class CassandraConnector:
-    def __init__(self, contact_points, keyspace):
+    def __init__(self, contact_points):
         self.cluster = Cluster(contact_points)
-        self.session = self.cluster.connect(keyspace)
+        self.session = self.cluster.connect()
         self.create_keyspace()
         self.create_table()
 
@@ -25,51 +30,50 @@ class CassandraConnector:
 
     def insert_data(self, email, otp):
         self.session.execute("""
-            INSERT INTO email_table (email, otp)
+            INSERT INTO email_namespace.email_table (email, otp)
             VALUES (%s, %s)
         """, (email, otp))
 
     def shutdown(self):
         self.cluster.shutdown()
 
-    def execute_cassandra_kafka_integration(self, kafka_config, topics):
-        consumer = Consumer(kafka_config)
-        consumer.subscribe(topics)
-        received_data = []  # Create a list to store received data
 
-        try:
-            while True:
-                msg = consumer.poll(1.0)
+def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs):
+    consumer = Consumer(kafka_config)
+    consumer.subscribe([topic])
 
-                if msg is None:
-                    continue
-                if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
-                        print('Reached end of partition')
-                    else:
-                        print('Error: {}'.format(msg.error()))
+    start_time = time.time()
+    try:
+        while True:
+            # Check if the elapsed time exceeds the run_duration_secs
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= run_duration_secs:
+                break
+            
+            msg = consumer.poll(1.0)
+            if msg is None:
+                continue
+            if msg.error():
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    logger.info('Reached end of partition')
                 else:
-                    email = msg.key().decode('utf-8')
-                    otp = msg.value().decode('utf-8')
+                    logger.error('Error: {}'.format(msg.error()))
+            else:
+                email = msg.key().decode('utf-8')
+                otp = msg.value().decode('utf-8')
 
-                    # Create a dict
-                    data = {'email': email, 'otp': otp}
+                # Insert data into Cassandra table
+                cassandra_connector.insert_data(email, otp)
+                logger.info(f'Received and inserted: Email={email}, OTP={otp}')
 
-                    # Insert data into Cassandra table
-                    self.insert_data(email, otp)
-                    print(f'Received and inserted: Email={email}, OTP={otp}')
-
-                    received_data.append(data)  # Append data to the list
-        finally:
-            consumer.close()  # Close the Kafka consumer
-
-        return received_data  # Return the collected data after the loop finishes
-
-
+    except KeyboardInterrupt:
+        logger.info("Received KeyboardInterrupt. Closing consumer.")
+    finally:
+        consumer.close()
 
 def kafka_consumer_cassandra_main():
     # Cassandra configuration
-    cassandra_connector = CassandraConnector(['cassandra'], 'email_namespace')
+    cassandra_connector = CassandraConnector(['cassandra'])
 
     # Create Cassandra keyspace and table
     cassandra_connector.create_keyspace()
@@ -82,17 +86,16 @@ def kafka_consumer_cassandra_main():
         'auto.offset.reset': 'earliest'
     }
 
-    # Kafka topics to subscribe to
-    topics = ['email_topic']
+    # Kafka topic to subscribe to
+    topic = 'email_topic'
 
-    cassandra_connector.execute_cassandra_kafka_integration(kafka_config, topics)
+    # Run for 30 seconds
+    run_duration_secs = 30
 
-    data = cassandra_connector.execute_cassandra_kafka_integration(kafka_config, topics)
-    
+    # Fetch and insert existing messages
+    fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs)
+
     cassandra_connector.shutdown()
-
-    return data
-
 
 if __name__ == '__main__':
     kafka_consumer_cassandra_main()

@@ -15,14 +15,15 @@ admin_client = AdminClient(admin_config)
 def kafka_create_topic_main():
     """Checks if the topic email_topic exists or not. If not, creates the topic."""
     topic_name = 'email_topic'
-    
-    try:
-        # Create the new topic
-        new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=3)
-        admin_client.create_topics([new_topic])
-        return "topic_created"
-    except:
+
+    existing_topics = admin_client.list_topics().topics
+    if topic_name in existing_topics:
         return "topic_already_exists"
+    
+    # Create the new topic
+    new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=3)
+    admin_client.create_topics([new_topic])
+    return "topic_created"
 
 
 if __name__ == "__main__":
