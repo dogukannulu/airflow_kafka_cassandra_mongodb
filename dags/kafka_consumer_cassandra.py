@@ -1,6 +1,11 @@
 from confluent_kafka import Consumer, KafkaError, KafkaException, TopicPartition
 from cassandra.cluster import Cluster
 import time
+import logging
+
+# Configure the logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 class CassandraConnector:
     def __init__(self, contact_points):
@@ -50,19 +55,19 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 continue
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
-                    print('Reached end of partition')
+                    logger.info('Reached end of partition')
                 else:
-                    print('Error: {}'.format(msg.error()))
+                    logger.error('Error: {}'.format(msg.error()))
             else:
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
                 # Insert data into Cassandra table
                 cassandra_connector.insert_data(email, otp)
-                print(f'Received and inserted: Email={email}, OTP={otp}')
+                logger.info(f'Received and inserted: Email={email}, OTP={otp}')
 
     except KeyboardInterrupt:
-        print("Received KeyboardInterrupt. Closing consumer.")
+        logger.info("Received KeyboardInterrupt. Closing consumer.")
     finally:
         consumer.close()
 

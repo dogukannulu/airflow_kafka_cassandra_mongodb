@@ -1,4 +1,10 @@
+import logging
 from confluent_kafka import Producer
+import time
+
+# Configure the logger
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 class KafkaProducerWrapper:
     def __init__(self, bootstrap_servers):
@@ -25,7 +31,23 @@ def kafka_producer_main():
     key = "sample_email@my_email.com"
     value = "1234567"
     
-    kafka_producer.produce_message(topic, key, value)
+    start_time = time.time()
+    
+    try:
+        while True:
+            kafka_producer.produce_message(topic, key, value)
+            logger.info("Produced message")
+            
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 30:  # Stop after 30 seconds
+                break
+            
+            time.sleep(5)  # Sleep for 5 seconds between producing messages
+    except KeyboardInterrupt:
+        logger.info("Received KeyboardInterrupt. Stopping producer.")
+    finally:
+        kafka_producer.producer.flush()
+        logger.info("Producer flushed.")
 
 if __name__ == "__main__":
     kafka_producer_main()
