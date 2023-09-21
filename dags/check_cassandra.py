@@ -51,3 +51,6 @@ def check_cassandra_main():
 
     # Close the Cassandra connection
     cassandra_connector.close()
+
+if __name__ == '__main__':
+    check_cassandra_main()
