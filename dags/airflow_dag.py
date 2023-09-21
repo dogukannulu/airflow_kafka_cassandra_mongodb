@@ -2,8 +2,8 @@ from airflow import DAG
 from datetime import datetime, timedelta
 
 from kafka_create_topic import kafka_create_topic_main
-from kafka_consumer_cassandra import kafka_consumer_cassandra_main
-from kafka_consumer_mongodb import kafka_consumer_mongodb_main
+from kafka_consumer_cassandra import kafka_consumer_cassandra_main, fetch_and_insert_messages
+from kafka_consumer_mongodb import kafka_consumer_mongodb_main, KafkaConsumerWrapperMongoDB
 from kafka_producer import kafka_producer_main
 from check_cassandra import check_cassandra_main
 from check_mongodb import check_mongodb_main
@@ -21,6 +21,12 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(seconds=5)
 }
+
+email_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['email']
+otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
+
+email_cassandra = fetch_and_insert_messages['email']
+otp_cassandra = fetch_and_insert_messages['otp']
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
