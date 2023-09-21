@@ -99,7 +99,9 @@ def kafka_consumer_mongodb_main():
     # Create a Kafka consumer
     kafka_consumer = KafkaConsumerWrapperMongoDB(kafka_config, topics)
 
-    kafka_consumer.consume_and_insert_messages()
+    data = kafka_consumer.consume_and_insert_messages()
+
+    return data
 
 
 if __name__ == '__main__':

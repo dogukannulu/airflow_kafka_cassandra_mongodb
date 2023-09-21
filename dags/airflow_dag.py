@@ -11,6 +11,7 @@ from check_mongodb import check_mongodb_main
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.email import EmailOperator
 
 start_date = datetime(2022, 10, 19, 12, 20)
 
