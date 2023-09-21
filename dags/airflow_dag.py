@@ -58,6 +58,10 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
+    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=email_cassandra, subject='One-Time-Password', html_content=otp_cassandra)
+
+    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=email_mongodb, subject='One-Time-Password', html_content=otp_mongodb)
+
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
-    kafka_consumer_cassandra >> check_cassandra
-    kafka_consumer_mongodb >> check_mongodb
+    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra
+    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb
