@@ -1,5 +1,6 @@
 from confluent_kafka import Consumer, KafkaError, KafkaException, TopicPartition
 from cassandra.cluster import Cluster
+import time
 
 class CassandraConnector:
     def __init__(self, contact_points):
@@ -32,12 +33,18 @@ class CassandraConnector:
         self.cluster.shutdown()
 
 
-def fetch_and_insert_messages(kafka_config, cassandra_connector, topic):
+def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs):
     consumer = Consumer(kafka_config)
     consumer.subscribe([topic])
 
+    start_time = time.time()
     try:
         while True:
+            # Check if the elapsed time exceeds the run_duration_secs
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= run_duration_secs:
+                break
+            
             msg = consumer.poll(1.0)
             if msg is None:
                 continue
@@ -53,6 +60,7 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic):
                 # Insert data into Cassandra table
                 cassandra_connector.insert_data(email, otp)
                 print(f'Received and inserted: Email={email}, OTP={otp}')
+
     except KeyboardInterrupt:
         print("Received KeyboardInterrupt. Closing consumer.")
     finally:
@@ -76,8 +84,11 @@ def kafka_consumer_cassandra_main():
     # Kafka topic to subscribe to
     topic = 'email_topic'
 
+    # Run for 30 seconds
+    run_duration_secs = 30
+
     # Fetch and insert existing messages
-    fetch_and_insert_messages(kafka_config, cassandra_connector, topic)
+    fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs)
 
     cassandra_connector.shutdown()
 
