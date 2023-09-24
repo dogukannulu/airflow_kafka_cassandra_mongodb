@@ -90,7 +90,7 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     channel='#data-engineering',
     username='airflow',
     icon_emoji=':parachute:'
-)
+    )
 
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
     kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra >> send_slack_cassandra
