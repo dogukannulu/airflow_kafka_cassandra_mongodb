@@ -16,6 +16,11 @@ x-airflow-common:
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 30
+    AIRFLOW__SMTP__SMTP_HOST: 'smtp.gmail.com' 
+    AIRFLOW__SMTP__SMTP_MAIL_FROM: 'sample_email@my_email.com' 
+    AIRFLOW__SMTP__SMTP_USER: 'sample_email@my_email.com' 
+    AIRFLOW__SMTP__SMTP_PASSWORD: 'your_password' 
+    AIRFLOW__SMTP__SMTP_PORT: '587'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
