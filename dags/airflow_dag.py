@@ -17,10 +17,6 @@ from kafka_consumer_cassandra import kafka_consumer_cassandra_main
 from get_last_record_mongodb import get_last_email_and_otp_mongodb
 from get_last_record_cassandra import get_last_email_and_otp_cassandra
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
 start_date = datetime(2022, 10, 19, 12, 20)
 
 default_args = {
