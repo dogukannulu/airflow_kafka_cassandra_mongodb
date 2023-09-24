@@ -89,5 +89,7 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     )
 
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
-    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra >> send_slack_cassandra
-    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb >> send_slack_mongodb
+    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra
+    kafka_consumer_cassandra >> check_cassandra >> send_slack_cassandra
+    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb
+    kafka_consumer_mongodb >> check_mongodb >> send_slack_mongodb
