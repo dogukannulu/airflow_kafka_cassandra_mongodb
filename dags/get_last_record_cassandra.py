@@ -4,7 +4,7 @@ from cassandra.cluster import Cluster
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-def get_last_email_and_top(table_name):
+def get_last_email_and_otp_cassandra():
     cassandra_hosts = ['cassandra']
     
     cluster = Cluster(contact_points=cassandra_hosts)
