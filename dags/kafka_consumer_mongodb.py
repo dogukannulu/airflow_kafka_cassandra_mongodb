@@ -63,14 +63,10 @@ class KafkaConsumerWrapperMongoDB:
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
-                # Create a dict
-                data = {'email': email, 'otp': otp}
-
                 # Insert data into MongoDB collection
                 mongodb_connector.insert_data(email, otp)
                 logger.info(f'Received and inserted: Email={email}, OTP={otp}')
 
-                return data
             
         mongodb_connector.close()
 
