@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import Variable
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.python import BranchPythonOperator
@@ -27,10 +26,8 @@ default_args = {
 email_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['email']
 otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
 
-email_cassandra = fetch_and_insert_messages['email']
-otp_cassandra = fetch_and_insert_messages['otp']
-
-slack_webhook_token = Variable.get('slack_webhook_token')
+email_cassandra = fetch_and_insert_messages()['email']
+otp_cassandra = fetch_and_insert_messages()['otp']
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
