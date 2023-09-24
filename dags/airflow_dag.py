@@ -1,3 +1,5 @@
+import pymongo
+import logging
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -14,6 +16,10 @@ from kafka_create_topic import kafka_create_topic_main
 from kafka_consumer_mongodb import kafka_consumer_mongodb_main, KafkaConsumerWrapperMongoDB
 from kafka_consumer_cassandra import kafka_consumer_cassandra_main, fetch_and_insert_messages
 
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 start_date = datetime(2022, 10, 19, 12, 20)
 
 default_args = {
@@ -28,6 +34,41 @@ otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
 
 email_cassandra = fetch_and_insert_messages()['email']
 otp_cassandra = fetch_and_insert_messages()['otp']
+
+def get_last_email_and_otp_mongodb(collection_name):
+    
+    mongodb_uri = 'mongodb://root:root@mongo:27017/'
+    database_name = 'email_database'
+    
+    client = pymongo.MongoClient(mongodb_uri)
+    database = client[database_name]
+    
+    try:
+        collection = database[collection_name]
+        
+        last_document = collection.find_one({}, sort=[('_id', pymongo.DESCENDING)])
+        
+        if last_document:
+            email = last_document.get("email")
+            top = last_document.get("top")
+            return email, top
+        else:
+            return None, None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        client.close()
+
+if __name__ == "__main__":
+    collection_name = "your_collection_name"  # Change to your collection name
+    last_email, last_top = get_last_email_and_top(collection_name)
+    
+    if last_email is not None and last_top is not None:
+        print(f"Last Email: {last_email}")
+        print(f"Last Top: {last_top}")
+    else:
+        print("No documents found in the collection.")
+
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
