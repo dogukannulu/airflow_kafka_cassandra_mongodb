@@ -3,7 +3,6 @@ from cassandra.cluster import Cluster
 import time
 import logging
 
-# Configure the logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,6 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
     start_time = time.time()
     try:
         while True:
-            # Check if the elapsed time exceeds the run_duration_secs
             elapsed_time = time.time() - start_time
             if elapsed_time >= run_duration_secs:
                 break
@@ -62,19 +60,20 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
-                # Create a dict
-                data = {'email': email, 'otp': otp}
+                query = "SELECT email FROM email_namespace.email_table WHERE email = %s"
+                existing_email = cassandra_connector.session.execute(query, (email,)).one()
 
-                # Insert data into Cassandra table
-                cassandra_connector.insert_data(email, otp)
-                logger.info(f'Received and inserted: Email={email}, OTP={otp}')
-
-                return data
+                if existing_email:
+                    logger.warning(f'Skipped existing email: Email={email}')
+                else:
+                    cassandra_connector.insert_data(email, otp)
+                    logger.info(f'Received and inserted: Email={email}, OTP={otp}')
 
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt. Closing consumer.")
     finally:
         consumer.close()
+
 
 def kafka_consumer_cassandra_main():
     # Cassandra configuration
