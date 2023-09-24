@@ -6,7 +6,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.python_operator import PythonOperator
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator
 
 from check_mongodb import check_mongodb_main
 from kafka_producer import kafka_producer_main
@@ -68,28 +68,26 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     send_slack_cassandra = SlackWebhookOperator(
     task_id='send_slack_cassandra',
-    webhook_token=slack_webhook_token,
+    slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
             :email: -> {email_cassandra}
             :ninja: -> {otp_cassandra}
             """,
     channel='#data-engineering',
-    username='airflow',
-    icon_emoji=':parachute:'
+    username='airflow'
     )
 
     send_slack_mongodb = SlackWebhookOperator(
     task_id='send_slack_mongodb',
-    webhook_token=slack_webhook_token,
+    slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
             :email: -> {email_mongodb}
             :ninja: -> {otp_mongodb}
             """,
     channel='#data-engineering',
-    username='airflow',
-    icon_emoji=':parachute:'
+    username='airflow'
     )
 
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
