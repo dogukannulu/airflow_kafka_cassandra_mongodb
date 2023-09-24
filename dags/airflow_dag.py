@@ -2,8 +2,8 @@ from airflow import DAG
 from datetime import datetime, timedelta
 
 from kafka_create_topic import kafka_create_topic_main
-from kafka_consumer_cassandra import kafka_consumer_cassandra_main
-from kafka_consumer_mongodb import kafka_consumer_mongodb_main
+from kafka_consumer_cassandra import kafka_consumer_cassandra_main, fetch_and_insert_messages
+from kafka_consumer_mongodb import kafka_consumer_mongodb_main, KafkaConsumerWrapperMongoDB
 from kafka_producer import kafka_producer_main
 from check_cassandra import check_cassandra_main
 from check_mongodb import check_mongodb_main
@@ -11,6 +11,7 @@ from check_mongodb import check_mongodb_main
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.email import EmailOperator
 
 start_date = datetime(2022, 10, 19, 12, 20)
 
@@ -20,6 +21,12 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(seconds=5)
 }
+
+email_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['email']
+otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
+
+email_cassandra = fetch_and_insert_messages['email']
+otp_cassandra = fetch_and_insert_messages['otp']
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
@@ -51,6 +58,10 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
+    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=email_cassandra, subject='One-Time-Password', html_content=otp_cassandra)
+
+    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=email_mongodb, subject='One-Time-Password', html_content=otp_mongodb)
+
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
-    kafka_consumer_cassandra >> check_cassandra
-    kafka_consumer_mongodb >> check_mongodb
+    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra
+    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb
