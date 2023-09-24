@@ -28,18 +28,10 @@ class CassandraConnector:
         """)
 
     def insert_data(self, email, otp):
-        # Check if the email already exists in the table
-        query = "SELECT email FROM email_namespace.email_table WHERE email = %s"
-        existing_email = self.session.execute(query, (email,)).one()
-
-        if existing_email:
-            logger.info(f'Email already exists in the database: {email}')
-        else:
-            self.session.execute("""
-                INSERT INTO email_namespace.email_table (email, otp)
-                VALUES (%s, %s)
-            """, (email, otp))
-            logger.info(f'Inserted: Email={email}, OTP={otp}')
+        self.session.execute("""
+            INSERT INTO email_namespace.email_table (email, otp)
+            VALUES (%s, %s)
+        """, (email, otp))
 
     def shutdown(self):
         self.cluster.shutdown()
@@ -52,7 +44,6 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
     start_time = time.time()
     try:
         while True:
-            # Check if the elapsed time exceeds the run_duration_secs
             elapsed_time = time.time() - start_time
             if elapsed_time >= run_duration_secs:
                 break
@@ -69,15 +60,21 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
-                # Insert data into Cassandra table
-                cassandra_connector.insert_data(email, otp)
-                logger.info(f'Received and inserted: Email={email}, OTP={otp}')
+                query = "SELECT email FROM email_namespace.email_table WHERE email = %s"
+                existing_email = cassandra_connector.session.execute(query, (email,)).one()
+
+                if existing_email:
+                    logger.info(f'Skipped existing email: Email={email}')
+                else:
+                    cassandra_connector.insert_data(email, otp)
+                    logger.info(f'Received and inserted: Email={email}, OTP={otp}')
 
 
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt. Closing consumer.")
     finally:
         consumer.close()
+
 
 def kafka_consumer_cassandra_main():
     # Cassandra configuration
