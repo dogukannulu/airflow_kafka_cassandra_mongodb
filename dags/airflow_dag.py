@@ -1,5 +1,6 @@
 import pymongo
 import logging
+from cassandra.cluster import Cluster
 from datetime import datetime, timedelta
 
 from airflow import DAG
