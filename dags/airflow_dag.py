@@ -1,4 +1,3 @@
-import pymongo
 import logging
 from cassandra.cluster import Cluster
 from datetime import datetime, timedelta
@@ -16,6 +15,7 @@ from check_cassandra import check_cassandra_main
 from kafka_create_topic import kafka_create_topic_main
 from kafka_consumer_mongodb import kafka_consumer_mongodb_main, KafkaConsumerWrapperMongoDB
 from kafka_consumer_cassandra import kafka_consumer_cassandra_main, fetch_and_insert_messages
+from get_last_record_mongodb import get_last_email_and_otp_mongodb
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -30,40 +30,41 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-email_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['email']
+email_mongodb, otp_mongodb = get_last_email_and_otp_mongodb()
 otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
 
 email_cassandra = fetch_and_insert_messages()['email']
 otp_cassandra = fetch_and_insert_messages()['otp']
 
 
-def get_last_email_and_otp_mongodb():
-    mongodb_uri = 'mongodb://root:root@mongo:27017/'
-    database_name = 'email_database'
-    collection_name = 'email_collection'
+
+def get_last_email_and_top(table_name):
+    # Cassandra connection parameters
+    cassandra_hosts = ['localhost']  # Change to your Cassandra cluster hosts
+    keyspace_name = 'your_keyspace_name'  # Change to your keyspace name
     
-    client = pymongo.MongoClient(mongodb_uri)
-    database = client[database_name]
+    # Connect to Cassandra cluster
+    cluster = Cluster(contact_points=cassandra_hosts)
+    session = cluster.connect(keyspace_name)
     
     try:
-        collection = database[collection_name]
+        # Prepare a CQL query to retrieve the last row from the table
+        cql_query = f"SELECT email, top FROM {table_name} LIMIT 1 ALLOW FILTERING"
         
-        last_document = collection.find_one({}, sort=[('_id', pymongo.DESCENDING)])
+        # Execute the query
+        result = session.execute(cql_query)
         
-        if last_document:
-            email = last_document.get("email")
-            top = last_document.get("top")
+        # Fetch the email and top values from the result
+        for row in result:
+            email = row.email
+            top = row.top
             return email, top
-        else:
-            return None, None
+        
+        return None, None
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:
-        client.close()
-
-
-
-email_mongodb, otp_mongodb = get_last_email_and_otp_mongodb()
+        cluster.shutdown()
 
 
 
