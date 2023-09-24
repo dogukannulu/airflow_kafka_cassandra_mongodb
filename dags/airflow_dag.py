@@ -35,10 +35,11 @@ otp_mongodb = KafkaConsumerWrapperMongoDB.consume_and_insert_messages()['otp']
 email_cassandra = fetch_and_insert_messages()['email']
 otp_cassandra = fetch_and_insert_messages()['otp']
 
-def get_last_email_and_otp_mongodb(collection_name):
-    
+
+def get_last_email_and_otp_mongodb():
     mongodb_uri = 'mongodb://root:root@mongo:27017/'
     database_name = 'email_database'
+    collection_name = 'email_collection'
     
     client = pymongo.MongoClient(mongodb_uri)
     database = client[database_name]
@@ -59,15 +60,10 @@ def get_last_email_and_otp_mongodb(collection_name):
     finally:
         client.close()
 
-if __name__ == "__main__":
-    collection_name = "your_collection_name"  # Change to your collection name
-    last_email, last_top = get_last_email_and_top(collection_name)
-    
-    if last_email is not None and last_top is not None:
-        print(f"Last Email: {last_email}")
-        print(f"Last Top: {last_top}")
-    else:
-        print("No documents found in the collection.")
+
+
+email_mongodb, otp_mongodb = get_last_email_and_otp_mongodb()
+
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
