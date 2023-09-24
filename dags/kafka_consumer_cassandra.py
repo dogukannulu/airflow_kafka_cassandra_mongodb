@@ -64,11 +64,10 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 existing_email = cassandra_connector.session.execute(query, (email,)).one()
 
                 if existing_email:
-                    logger.info(f'Skipped existing email: Email={email}')
+                    logger.warning(f'Skipped existing email: Email={email}')
                 else:
                     cassandra_connector.insert_data(email, otp)
                     logger.info(f'Received and inserted: Email={email}, OTP={otp}')
-
 
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt. Closing consumer.")
