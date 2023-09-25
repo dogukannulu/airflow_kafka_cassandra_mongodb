@@ -1,6 +1,7 @@
 from confluent_kafka import Consumer, KafkaError, KafkaException, TopicPartition
 from cassandra.cluster import Cluster
 import time
+import json
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -37,7 +38,7 @@ class CassandraConnector:
         self.cluster.shutdown()
 
 
-def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs):
+def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs, **kwargs):
     consumer = Consumer(kafka_config)
     consumer.subscribe([topic])
 
@@ -60,6 +61,8 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
+                data = {'email': email, 'otp': otp}
+
                 query = "SELECT email FROM email_namespace.email_table WHERE email = %s"
                 existing_email = cassandra_connector.session.execute(query, (email,)).one()
 
@@ -68,7 +71,10 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 else:
                     cassandra_connector.insert_data(email, otp)
                     logger.info(f'Received and inserted: Email={email}, OTP={otp}')
-
+                    
+                    kwargs['ti'].xcom_push(key='json_data_cassandra', value=json.dumps(data))
+                    return data
+        
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt. Closing consumer.")
     finally:
