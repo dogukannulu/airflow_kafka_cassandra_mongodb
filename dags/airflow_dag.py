@@ -14,8 +14,7 @@ from check_cassandra import check_cassandra_main
 from kafka_create_topic import kafka_create_topic_main
 from kafka_consumer_mongodb import kafka_consumer_mongodb_main
 from kafka_consumer_cassandra import kafka_consumer_cassandra_main
-from get_last_record_mongodb import get_last_email_and_otp_mongodb
-from get_last_record_cassandra import get_last_email_and_otp_cassandra
+from xcom_get_records import get_record_for_cassandra, get_record_for_mongodb
 
 start_date = datetime(2022, 10, 19, 12, 20)
 
@@ -26,8 +25,13 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-email_mongodb, otp_mongodb = get_last_email_and_otp_mongodb()
-email_cassandra, otp_cassandra = get_last_email_and_otp_cassandra()
+cassandra_data = get_record_for_cassandra()
+mongodb_data = get_record_for_mongodb()
+
+email_cassandra = cassandra_data['email']
+otp_cassandra = cassandra_data['otp']
+email_mongodb = mongodb_data['email']
+otp_mongodb = mongodb_data['otp']
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
@@ -89,7 +93,5 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     )
 
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
-    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra
-    kafka_consumer_cassandra >> check_cassandra >> send_slack_cassandra
-    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb
-    kafka_consumer_mongodb >> check_mongodb >> send_slack_mongodb
+    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra >> send_slack_cassandra
+    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb >> send_slack_mongodb
