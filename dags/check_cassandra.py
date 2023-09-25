@@ -14,43 +14,41 @@ class CassandraConnector:
         query = "SELECT * FROM email_namespace.email_table WHERE email = %s"
         result = self.session.execute(query, (email,))
         
+        data_dict = {}
+        
         for row in result:
+            data_dict['email'] = row.email
+            data_dict['otp'] = row.otp
             logger.info(f"Email: {row.email}, OTP: {row.otp}")
         
-        # Calculate the length of the SELECT statement
         query_length = len(query)
         logger.info(f"Length of the SELECT statement: {query_length} characters")
         
-        return query_length
+        return data_dict
 
     def close(self):
         self.cluster.shutdown()
 
 
 def check_cassandra_main():
-
-    # Cassandra configuration
-    contact_points = ['cassandra']  # Replace with your Cassandra node(s)
+    contact_points = ['cassandra']
     keyspace = 'email_namespace'
 
-    # Create a CassandraConnector instance
     cassandra_connector = CassandraConnector(contact_points, keyspace)
 
-    # Define a sample email to search for
     sample_email = 'sample_email@my_email.com'
 
-    # Query the Cassandra table for the sample email
-    cassandra_connector.select_data(sample_email)
+    data_dict = cassandra_connector.select_data(sample_email)
 
-    query_length = cassandra_connector.select_data(sample_email)
+    cassandra_connector.close()
 
-    if query_length > 0:
-        logger.info("Record successfully inserted into the table")
+    if data_dict:
+        logger.info(f"Data found for email: {data_dict['email']}")
+        logger.info(f"OTP: {data_dict['otp']}")
+        return data_dict
     else:
         logger.error("No records found")
-
-    # Close the Cassandra connection
-    cassandra_connector.close()
+        return None
 
 if __name__ == '__main__':
     check_cassandra_main()
