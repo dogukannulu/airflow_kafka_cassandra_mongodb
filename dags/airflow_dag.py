@@ -14,7 +14,6 @@ from check_cassandra import check_cassandra_main
 from kafka_create_topic import kafka_create_topic_main
 from kafka_consumer_mongodb import kafka_consumer_mongodb_main
 from kafka_consumer_cassandra import kafka_consumer_cassandra_main
-from xcom_get_records import get_record_for_cassandra, get_record_for_mongodb
 
 start_date = datetime(2022, 10, 19, 12, 20)
 
@@ -24,14 +23,6 @@ default_args = {
     'retries': 1,
     'retry_delay': timedelta(seconds=5)
 }
-
-cassandra_data = get_record_for_cassandra()
-mongodb_data = get_record_for_mongodb()
-
-email_cassandra = cassandra_data['email']
-otp_cassandra = cassandra_data['otp']
-email_mongodb = mongodb_data['email']
-otp_mongodb = mongodb_data['otp']
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
@@ -64,17 +55,17 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=email_cassandra, subject='One-Time-Password', html_content=otp_cassandra)
+    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=[check_cassandra.output['email']], subject='One-Time-Password', html_content=[check_cassandra.output['otp']])
 
-    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=email_mongodb, subject='One-Time-Password', html_content=otp_mongodb)
+    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=[check_mongodb.output['email']], subject='One-Time-Password', html_content=[check_mongodb.output['otp']])
 
     send_slack_cassandra = SlackWebhookOperator(
     task_id='send_slack_cassandra',
     slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
-            :email: -> {email_cassandra}
-            :ninja: -> {otp_cassandra}
+            :email: -> {[check_cassandra.output['email']]}
+            :ninja: -> {[check_cassandra.output['otp']]}
             """,
     channel='#data-engineering',
     username='airflow'
@@ -85,8 +76,8 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
-            :email: -> {email_mongodb}
-            :ninja: -> {otp_mongodb}
+            :email: -> {[check_mongodb.output['email']]}
+            :ninja: -> {[check_mongodb.output['otp']]}
             """,
     channel='#data-engineering',
     username='airflow'

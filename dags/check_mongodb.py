@@ -22,13 +22,18 @@ def check_mongodb_main():
 
     # Query the collection for the sample email
     result = collection.find_one({'email': sample_email})
+    data_dict = {}
 
-    # Check if the result is not None (i.e., data was found)
     if result:
         logger.info(f"Data found for email: {result['email']}")
         logger.info(f"OTP: {result['otp']}")
+        data_dict['email'] = result.get('email')
+        data_dict['otp'] = result.get('otp')
     else:
         logger.error(f"No data found for email: {sample_email}")
+        data_dict['email'] = None
+        data_dict['otp'] = None
 
     # Close the MongoDB connection
     client.close()
+    return data_dict
