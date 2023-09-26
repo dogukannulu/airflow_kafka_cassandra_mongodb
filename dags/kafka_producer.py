@@ -39,7 +39,7 @@ def kafka_producer_main():
             logger.info("Produced message")
             
             elapsed_time = time.time() - start_time
-            if elapsed_time >= 30:  # Stop after 30 seconds
+            if elapsed_time >= 40:  # Stop after 40 seconds
                 break
             
             time.sleep(5)  # Sleep for 5 seconds between producing messages

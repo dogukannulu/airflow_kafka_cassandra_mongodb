@@ -60,6 +60,7 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 email = msg.key().decode('utf-8')
                 otp = msg.value().decode('utf-8')
 
+
                 query = "SELECT email FROM email_namespace.email_table WHERE email = %s"
                 existing_email = cassandra_connector.session.execute(query, (email,)).one()
 
@@ -68,7 +69,7 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
                 else:
                     cassandra_connector.insert_data(email, otp)
                     logger.info(f'Received and inserted: Email={email}, OTP={otp}')
-
+                            
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt. Closing consumer.")
     finally:
@@ -76,27 +77,20 @@ def fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_dura
 
 
 def kafka_consumer_cassandra_main():
-    # Cassandra configuration
     cassandra_connector = CassandraConnector(['cassandra'])
 
-    # Create Cassandra keyspace and table
     cassandra_connector.create_keyspace()
     cassandra_connector.create_table()
 
-    # Kafka configuration
     kafka_config = {
         'bootstrap.servers': 'kafka1:19092,kafka2:19093,kafka3:19094',
         'group.id': 'cassandra_consumer_group',
         'auto.offset.reset': 'earliest'
     }
 
-    # Kafka topic to subscribe to
     topic = 'email_topic'
-
-    # Run for 30 seconds
     run_duration_secs = 30
 
-    # Fetch and insert existing messages
     fetch_and_insert_messages(kafka_config, cassandra_connector, topic, run_duration_secs)
 
     cassandra_connector.shutdown()

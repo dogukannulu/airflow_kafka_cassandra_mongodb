@@ -14,8 +14,6 @@ from check_cassandra import check_cassandra_main
 from kafka_create_topic import kafka_create_topic_main
 from kafka_consumer_mongodb import kafka_consumer_mongodb_main
 from kafka_consumer_cassandra import kafka_consumer_cassandra_main
-from get_last_record_mongodb import get_last_email_and_otp_mongodb
-from get_last_record_cassandra import get_last_email_and_otp_cassandra
 
 start_date = datetime(2022, 10, 19, 12, 20)
 
@@ -26,8 +24,13 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-email_mongodb, otp_mongodb = get_last_email_and_otp_mongodb()
-email_cassandra, otp_cassandra = get_last_email_and_otp_cassandra()
+email_otp_cassandra = check_cassandra_main()
+email_otp_mongodb = check_mongodb_main()
+
+email_cassandra = email_otp_cassandra['email']
+otp_cassandra = email_otp_cassandra['otp']
+email_mongodb = email_otp_mongodb['email']
+otp_mongodb = email_otp_mongodb['otp']
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
@@ -60,9 +63,33 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=email_cassandra, subject='One-Time-Password', html_content=otp_cassandra)
+    send_email_cassandra = EmailOperator(
+        task_id='send_email_cassandra',
+        to=email_cassandra,
+        subject='One-Time-Password',
+        html_content=f"""
+                <html>
+                <body>
+                <h1>Your OTP</h1>
+                <p>{otp_cassandra}</p>
+                </body>
+                </html>
+                """
+        )
 
-    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=email_mongodb, subject='One-Time-Password', html_content=otp_mongodb)
+    send_email_mongodb = EmailOperator(
+        task_id='send_email_mongodb',
+        to=email_mongodb,
+        subject='One-Time-Password',
+        html_content=f"""
+                <html>
+                <body>
+                <h1>Your OTP</h1>
+                <p>{otp_mongodb}</p>
+                </body>
+                </html>
+                """
+        )
 
     send_slack_cassandra = SlackWebhookOperator(
     task_id='send_slack_cassandra',
@@ -89,7 +116,5 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     )
 
     create_new_topic >> [topic_created, topic_already_exists] >> kafka_producer
-    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra
-    kafka_consumer_cassandra >> check_cassandra >> send_slack_cassandra
-    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb
-    kafka_consumer_mongodb >> check_mongodb >> send_slack_mongodb
+    kafka_consumer_cassandra >> check_cassandra >> send_email_cassandra >> send_slack_cassandra
+    kafka_consumer_mongodb >> check_mongodb >> send_email_mongodb >> send_slack_mongodb
