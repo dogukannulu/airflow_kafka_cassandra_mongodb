@@ -1,5 +1,6 @@
 from cassandra.cluster import Cluster
 import logging
+from airflow.exceptions import AirflowException
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -39,13 +40,11 @@ def check_cassandra_main():
 
     cassandra_connector.close()
 
-    if data_dict:
+    if len(data_dict) != 0:
         logger.info(f"Data found for email: {data_dict['email']}")
         logger.info(f"OTP: {data_dict['otp']}")
+        
         return data_dict
     else:
         logger.error("No records found")
-        return None
-
-if __name__ == '__main__':
-    check_cassandra_main()
+        raise AirflowException("No data found in Cassandra table.")
