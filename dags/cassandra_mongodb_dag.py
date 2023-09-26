@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -24,6 +23,10 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
+email_cassandra = check_cassandra_main()['email']
+otp_cassandra = check_cassandra_main()['otp']
+email_mongodb = check_mongodb_main()['email']
+otp_mongodb = check_mongodb_main()['otp']
 
 def decide_branch():
     create_topic = kafka_create_topic_main()
@@ -31,15 +34,6 @@ def decide_branch():
         return "topic_created"
     else:
         return "topic_already_exists"
-
-
-email_otp_cassandra = check_cassandra_main()
-email_otp_mongodb = check_mongodb_main()
-
-email_cassandra = email_otp_cassandra['email']
-otp_cassandra = email_otp_cassandra['otp']
-email_mongodb = email_otp_mongodb['email']
-otp_mongodb = email_otp_mongodb['otp']
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
@@ -77,7 +71,7 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
         html_content=f"""
                 <html>
                 <body>
-                <h1>You can find your One Time Password below</h1>
+                <h1>Your OTP</h1>
                 <p>{otp_cassandra}</p>
                 </body>
                 </html>
