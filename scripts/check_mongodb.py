@@ -1,6 +1,5 @@
 from pymongo import MongoClient
 import logging
-from airflow.exceptions import AirflowException
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -29,9 +28,9 @@ def check_mongodb_main():
         data_dict['otp'] = result.get('otp')
         
         client.close()
-        return data_dict
-
     else:
-        logger.error(f"No data found for email: {sample_email}")
-        raise AirflowException(f"No data found for email: {sample_email}")
-    
+        data_dict['email'] = ''
+        data_dict['otp'] = ''
+
+        client.close()
+    return data_dict
