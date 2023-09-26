@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -24,20 +23,22 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-email_otp_cassandra = check_cassandra_main()
-email_otp_mongodb = check_mongodb_main()
+email_cassandra = check_cassandra_main()['email']
+otp_cassandra = check_cassandra_main()['otp']
+email_mongodb = check_mongodb_main()['email']
+otp_mongodb = check_mongodb_main()['otp']
 
-email_cassandra = email_otp_cassandra['email']
-otp_cassandra = email_otp_cassandra['otp']
-email_mongodb = email_otp_mongodb['email']
-otp_mongodb = email_otp_mongodb['otp']
+def decide_branch():
+    create_topic = kafka_create_topic_main()
+    if create_topic == "Created":
+        return "topic_created"
+    else:
+        return "topic_already_exists"
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
-    create_new_topic = BranchPythonOperator(task_id='create_new_topic', python_callable=kafka_create_topic_main,
-                             retries=2, retry_delay=timedelta(seconds=10),
-                             execution_timeout=timedelta(seconds=10))
+    create_new_topic = BranchPythonOperator(task_id='create_new_topic', python_callable=decide_branch)
     
     kafka_consumer_cassandra = PythonOperator(task_id='kafka_consumer_cassandra', python_callable=kafka_consumer_cassandra_main,
                              retries=2, retry_delay=timedelta(seconds=10),
@@ -84,7 +85,7 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
         html_content=f"""
                 <html>
                 <body>
-                <h1>Your OTP</h1>
+                <h1>You can find your One Time Password below</h1>
                 <p>{otp_mongodb}</p>
                 </body>
                 </html>

@@ -23,12 +23,14 @@ def check_mongodb_main():
     if result:
         logger.info(f"Data found for email: {result['email']}")
         logger.info(f"OTP: {result['otp']}")
+        
         data_dict['email'] = result.get('email')
         data_dict['otp'] = result.get('otp')
+        
+        client.close()
     else:
-        logger.error(f"No data found for email: {sample_email}")
-        data_dict['email'] = None
-        data_dict['otp'] = None
+        data_dict['email'] = ''
+        data_dict['otp'] = ''
 
-    client.close()
+        client.close()
     return data_dict
