@@ -18,12 +18,12 @@ def kafka_create_topic_main():
 
     existing_topics = admin_client.list_topics().topics
     if topic_name in existing_topics:
-        return "topic_already_exists"
+        return "Exists"
     
     # Create the new topic
     new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=3)
     admin_client.create_topics([new_topic])
-    return "topic_created"
+    return "Created"
 
 
 if __name__ == "__main__":
