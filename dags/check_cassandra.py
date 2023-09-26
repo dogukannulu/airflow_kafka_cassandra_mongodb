@@ -21,9 +21,6 @@ class CassandraConnector:
             data_dict['otp'] = row.otp
             logger.info(f"Email: {row.email}, OTP: {row.otp}")
         
-        query_length = len(query)
-        logger.info(f"Length of the SELECT statement: {query_length} characters")
-        
         return data_dict
 
     def close(self):
