@@ -1,7 +1,6 @@
 from confluent_kafka import Consumer, KafkaError
 from pymongo import MongoClient
 import time
-import json
 import logging
 
 logging.basicConfig(level=logging.INFO,
@@ -94,4 +93,3 @@ def kafka_consumer_mongodb_main():
 
 if __name__ == '__main__':
     kafka_consumer_mongodb_main()
-    
