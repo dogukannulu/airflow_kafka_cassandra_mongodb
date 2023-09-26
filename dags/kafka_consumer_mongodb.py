@@ -37,7 +37,7 @@ class KafkaConsumerWrapperMongoDB:
         self.consumer = Consumer(kafka_config)
         self.consumer.subscribe(topics)
 
-    def consume_and_insert_messages(self, **kwargs):
+    def consume_and_insert_messages(self):
         start_time = time.time()
         try:
             while True:
@@ -57,17 +57,12 @@ class KafkaConsumerWrapperMongoDB:
                     email = msg.key().decode('utf-8')
                     otp = msg.value().decode('utf-8')
 
-                    data = {'email': email, 'otp': otp}
-
                     existing_document = self.db[self.collection_name].find_one({"email": email, "otp": otp})
                     if existing_document:
                         logger.warning(f"Document with Email={email}, OTP={otp} already exists in the collection.")
                     else:
                         mongodb_connector.insert_data(email, otp)
                         logger.info(f'Received and inserted: Email={email}, OTP={otp}')
-
-                        kwargs['ti'].xcom_push(key='json_data_mongodb', value=json.dumps(data))
-                        return data
 
         except KeyboardInterrupt:
             logger.info("Received KeyboardInterrupt. Closing consumer.")
@@ -99,3 +94,4 @@ def kafka_consumer_mongodb_main():
 
 if __name__ == '__main__':
     kafka_consumer_mongodb_main()
+    
