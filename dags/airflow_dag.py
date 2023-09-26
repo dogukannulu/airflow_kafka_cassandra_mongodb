@@ -24,6 +24,11 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
+email_cassandra = check_cassandra_main()['email']
+otp_cassandra = check_cassandra_main()['otp']
+email_mongodb = check_mongodb_main()['email']
+otp_mongodb = check_mongodb_main()['otp']
+
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
 
@@ -55,17 +60,17 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
 
     topic_already_exists = DummyOperator(task_id="topic_already_exists")
 
-    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=[check_cassandra.output['email']], subject='One-Time-Password', html_content=[check_cassandra.output['otp']])
+    send_email_cassandra = EmailOperator(task_id='send_email_cassandra', to=email_cassandra, subject='One-Time-Password', html_content=otp_cassandra)
 
-    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=[check_mongodb.output['email']], subject='One-Time-Password', html_content=[check_mongodb.output['otp']])
+    send_email_mongodb = EmailOperator(task_id='send_email_mongodb', to=email_mongodb, subject='One-Time-Password', html_content=otp_mongodb)
 
     send_slack_cassandra = SlackWebhookOperator(
     task_id='send_slack_cassandra',
     slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
-            :email: -> {[check_cassandra.output['email']]}
-            :ninja: -> {[check_cassandra.output['otp']]}
+            :email: -> {email_cassandra}
+            :ninja: -> {otp_cassandra}
             """,
     channel='#data-engineering',
     username='airflow'
@@ -76,8 +81,8 @@ with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_
     slack_webhook_conn_id = 'slack_webhook',
     message=f"""
             :red_circle: New e-mail and OTP arrival
-            :email: -> {[check_mongodb.output['email']]}
-            :ninja: -> {[check_mongodb.output['otp']]}
+            :email: -> {email_mongodb}
+            :ninja: -> {otp_mongodb}
             """,
     channel='#data-engineering',
     username='airflow'
