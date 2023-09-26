@@ -1,3 +1,3 @@
 # Overview
 
-![image](https://github.com/dogukannulu/airflow_kafka_nosql/assets/91257958/ed47f84b-7bce-4d70-8227-5ce139779084)
+![image](https://github.com/dogukannulu/airflow_kafka_cassandra_mongodb/assets/91257958/b5ffd185-e046-43cc-ace6-cb7c4069d95f)
