@@ -24,10 +24,13 @@ default_args = {
     'retry_delay': timedelta(seconds=5)
 }
 
-email_cassandra = check_cassandra_main()['email']
-otp_cassandra = check_cassandra_main()['otp']
-email_mongodb = check_mongodb_main()['email']
-otp_mongodb = check_mongodb_main()['otp']
+email_otp_cassandra = check_cassandra_main()
+email_otp_mongodb = check_mongodb_main()
+
+email_cassandra = email_otp_cassandra['email']
+otp_cassandra = email_otp_cassandra['otp']
+email_mongodb = email_otp_mongodb['email']
+otp_mongodb = email_otp_mongodb['otp']
 
 
 with DAG('airflow_kafka_cassandra_mongodb', default_args=default_args, schedule_interval='@daily', catchup=False) as dag:
