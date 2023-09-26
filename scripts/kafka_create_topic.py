@@ -28,4 +28,4 @@ def kafka_create_topic_main():
 
 if __name__ == "__main__":
     result = kafka_create_topic_main()
-    print(result)
+    logger.info(result)
